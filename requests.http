@@ -1,0 +1,113 @@
+### E-commerce API — manual smoke test (VS Code REST Client / IntelliJ HTTP)
+### Run `npm run db:migrate && npm run db:seed && npm run dev` first.
+
+@host = http://localhost:4000/api/v1
+@adminEmail = admin@example.com
+@adminPassword = Admin123!
+@customerEmail = customer@example.com
+@customerPassword = Customer123!
+
+### Health
+GET http://localhost:4000/health
+
+### 1. Sign up a new customer
+# @name signup
+POST {{host}}/auth/signup
+Content-Type: application/json
+
+{ "name": "Jane Doe", "email": "jane@example.com", "password": "Password123!" }
+
+### 2. Log in (capture token)
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{customerEmail}}", "password": "{{customerPassword}}" }
+
+@token = {{login.response.body.data.token}}
+
+### 3. Log in as admin (capture admin token)
+# @name adminLogin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{adminEmail}}", "password": "{{adminPassword}}" }
+
+@adminToken = {{adminLogin.response.body.data.token}}
+
+### 4. List products (filter + search + paginate)
+GET {{host}}/products?category=electronics&minPrice=50&q=key&page=1&limit=10
+
+### 5. Product details
+GET {{host}}/products/1
+
+### 6. Admin — create a product
+# @name createProduct
+POST {{host}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "name": "New Gadget", "description": "Fresh stock", "price": 79.99, "category": "electronics", "stock": 25 }
+
+### 7. Add to wishlist
+POST {{host}}/wishlist
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "productId": 1 }
+
+### 8. View wishlist
+GET {{host}}/wishlist
+Authorization: Bearer {{token}}
+
+### 9. Add to cart
+POST {{host}}/cart
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "productId": 1, "quantity": 2 }
+
+### 10. View cart (dynamic total)
+GET {{host}}/cart
+Authorization: Bearer {{token}}
+
+### 11. Update cart quantity (0 removes the line)
+PATCH {{host}}/cart/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "quantity": 3 }
+
+### 12. Checkout (creates a pending order)
+# @name checkout
+POST {{host}}/orders/checkout
+Authorization: Bearer {{token}}
+
+@orderId = {{checkout.response.body.data.order.id}}
+
+### 13. Confirm payment (status -> paid, stock reduced, cart cleared)
+POST {{host}}/orders/{{orderId}}/confirm-payment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "success": true }
+
+### 14. List my orders
+GET {{host}}/orders
+Authorization: Bearer {{token}}
+
+### 15. Order detail
+GET {{host}}/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### 16. Forgot password (token is logged to the server console)
+POST {{host}}/auth/forgot-password
+Content-Type: application/json
+
+{ "email": "{{customerEmail}}" }
+
+### 17. Reset password (paste the token from the server console)
+POST {{host}}/auth/reset-password
+Content-Type: application/json
+
+{ "token": "PASTE_TOKEN_HERE", "password": "BrandNewPass123!" }

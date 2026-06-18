@@ -1,0 +1,292 @@
+{
+  "info": {
+    "name": "E-commerce API",
+    "description": "Full collection for the Node.js + PostgreSQL e-commerce API. Login requests auto-save tokens to collection variables {{token}} and {{adminToken}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api/v1" },
+    { "key": "rootUrl", "value": "http://localhost:4000" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "productId", "value": "1" },
+    { "key": "orderId", "value": "1" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "noauth" },
+        "url": { "raw": "{{rootUrl}}/health", "host": ["{{rootUrl}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"Password123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] }
+          }
+        },
+        {
+          "name": "Login (customer) — saves {{token}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  console.log('Saved customer token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Customer123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login (admin) — saves {{adminToken}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('adminToken', json.data.token);",
+                  "  console.log('Saved admin token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Forgot password (token logged to server console)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"customer@example.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Reset password (paste token from server console)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"PASTE_TOKEN_HERE\",\n  \"password\": \"BrandNewPass123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth", "reset-password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List products (filter/search/sort/paginate)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=10&category=electronics&minPrice=0&maxPrice=500&q=&sort=created_at&order=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "category", "value": "electronics" },
+                { "key": "minPrice", "value": "0" },
+                { "key": "maxPrice", "value": "500" },
+                { "key": "q", "value": "" },
+                { "key": "sort", "value": "created_at", "description": "created_at | price | name" },
+                { "key": "order", "value": "desc", "description": "asc | desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get product by id",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Create product (ADMIN)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"New Gadget\",\n  \"description\": \"Fresh stock\",\n  \"price\": 79.99,\n  \"category\": \"electronics\",\n  \"stock\": 25,\n  \"image_url\": \"https://example.com/img/gadget.jpg\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Update product (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"price\": 69.99,\n  \"stock\": 40\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Delete product (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
+      "item": [
+        {
+          "name": "View wishlist",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/wishlist", "host": ["{{baseUrl}}"], "path": ["wishlist"] }
+          }
+        },
+        {
+          "name": "Add to wishlist",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"productId\": {{productId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/wishlist", "host": ["{{baseUrl}}"], "path": ["wishlist"] }
+          }
+        },
+        {
+          "name": "Remove from wishlist",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/wishlist/{{productId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "View cart (with total)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          }
+        },
+        {
+          "name": "Add to cart (increments if exists)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"productId\": {{productId}},\n  \"quantity\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          }
+        },
+        {
+          "name": "Update quantity (0 removes the line)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 3\n}" },
+            "url": { "raw": "{{baseUrl}}/cart/{{productId}}", "host": ["{{baseUrl}}"], "path": ["cart", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Remove cart item",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/cart/{{productId}}", "host": ["{{baseUrl}}"], "path": ["cart", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Checkout (creates pending order) — saves {{orderId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.order && json.data.order.id) {",
+                  "  pm.collectionVariables.set('orderId', json.data.order.id);",
+                  "  console.log('Saved orderId ' + json.data.order.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/orders/checkout", "host": ["{{baseUrl}}"], "path": ["orders", "checkout"] }
+          }
+        },
+        {
+          "name": "Confirm payment (paid + stock down + cart cleared)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"success\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}/confirm-payment", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}", "confirm-payment"] }
+          }
+        },
+        {
+          "name": "List my orders",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/orders?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["orders"], "query": [ { "key": "page", "value": "1" }, { "key": "limit", "value": "10" } ] }
+          }
+        },
+        {
+          "name": "Get order by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
