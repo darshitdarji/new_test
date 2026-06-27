@@ -23,9 +23,7 @@ ORDER BY id;
 -- ─────────────────────────────────────────────────────────────
 -- PRODUCTS
 
-
-
-
+-- new products
 -- ─────────────────────────────────────────────────────────────
 SELECT id, name, price, category, stock, is_active
 FROM products
